@@ -31,6 +31,8 @@ class CertInfo:
     cert_file: str
     key_file: str
     domains: tuple[str]
+    cert_data: str = None
+    key_data: str = None
     
 @dataclasses.dataclass()
 class ProxyService(InjectableModel):
@@ -150,6 +152,20 @@ class CertbotCertRole(ImageRole, SetupTaskMixin, AsyncInjectable):
 
     certbot_email = None
     certbot_production_certificates = True
+
+    async def pki_for(self, hn):
+
+        await self.async_become_ready()
+        if hn not in self.cert_info.domains:
+            raise KeyError(hn)
+        async with self.machine.filesystem_access() as c:
+            c = Path(c)
+            ci = self.cert_info
+            cert_data = (c/Path(ci.cert_file).relative_to('/')).open().read()
+            key_data = (c/Path(ci.key_file).relative_to('/')).open().read()
+            return CertInfo(cert_file=ci.cert_file, key_file=ci.key_file,
+                            domains=ci.domains,
+                            cert_data=cert_data, key_data=key_data)
 
     async def async_ready(self):
         self.cert_info = None
