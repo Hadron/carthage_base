@@ -20,6 +20,12 @@ from carthage.utils import memoproperty
 from carthage.modeling.utils import setattr_default # xxx this should move somewhere more public
 from carthage.oci import *
 from carthage.podman import *
+import inspect
+
+async def await_if_awaitable(x):
+    if inspect.isawaitable(x):
+        return await x
+    return x
 
 resources_dir = Path(__file__).parent.joinpath('resources')
 
@@ -242,7 +248,8 @@ class PkiCertRole(ImageRole, AsyncInjectable):
             for d in self.model.pki_manager_domains:
                 domain_path = pki_path/d
                 if domain_path.exists(): continue
-                domain_path.write_text(self.pki.credentials(d))
+                c = await await_if_awaitable(self.pki.credentials(d))
+                domain_path.write_text(c)
                 
 __all__ += ['PkiCertRole']
 
