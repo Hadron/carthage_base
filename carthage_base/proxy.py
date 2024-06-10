@@ -422,8 +422,9 @@ class ProxyServiceRole(MachineModel, AsyncInjectable, template=True):
         else:
             fallback_addr = getattr(self, 'ip_address', None)
             if fallback_addr is None:
-                for l1, l2 in shared_network_links(self.network_links, config.server.network_links):
-                    fallback_addr = l1.merged_v4_config.address
+                if config.server:
+                    for l1, l2 in shared_network_links(self.network_links, config.server.network_links):
+                        fallback_addr = l1.merged_v4_config.address
             if fallback_addr is None \
                and issubclass(self.machine_type, PodmanContainer):
                 fallback_addr = 'host.containers.internal'
